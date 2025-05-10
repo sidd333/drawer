@@ -1,45 +1,43 @@
 'use client'
 
-import {
-  useFileDrawerStore,
-  FileSelectionResult,
-  RemoteFile,
-} from "@/store/fileDrawerStore";
 import { useState } from "react";
 import { GlobeAltIcon, DocumentIcon } from "@heroicons/react/24/outline";
+import { FileSidebar, FileSelectionResult, RemoteFile } from "./FileSidebar";
 
 export const ExampleComponent: React.FC = () => {
-  const { openDrawer } = useFileDrawerStore();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedRemoteFiles, setSelectedRemoteFiles] = useState<RemoteFile[]>(
     []
   );
 
   const handleUploadClick = () => {
-    openDrawer(
-      "example-component", // requestId
-      (result) => {
-        const { localFiles, remoteFiles } = result;
-        setSelectedFiles(localFiles);
-        setSelectedRemoteFiles(remoteFiles);
+    setIsDrawerOpen(true);
+  };
 
-        console.log("Files selected:", { localFiles, remoteFiles });
+  const handleClose = () => {
+    setIsDrawerOpen(false);
+  };
 
-        // Example of how to process different types of files
-        localFiles.forEach((file) => {
-          console.log(`Local file: ${file.name} (${file.size} bytes)`);
-          // Here you could upload the local file to S3
-          // AWS S3 upload would use the file binary data directly
-        });
+  const handleSelect = (result: FileSelectionResult) => {
+    const { localFiles, remoteFiles } = result;
+    setSelectedFiles(localFiles);
+    setSelectedRemoteFiles(remoteFiles);
 
-        remoteFiles.forEach((file) => {
-          console.log(`Remote file: ${file.name} (${file.url})`);
-          // Here you could fetch the remote file and then upload it
-          // Or pass the URL directly to your backend to handle
-        });
-      },
-      { multiple: true, accept: ".jpg,.png,.pdf", allowRemote: true }
-    );
+    console.log("Files selected:", { localFiles, remoteFiles });
+
+    // Example of how to process different types of files
+    localFiles.forEach((file) => {
+      console.log(`Local file: ${file.name} (${file.size} bytes)`);
+      // Here you could upload the local file to S3
+      // AWS S3 upload would use the file binary data directly
+    });
+
+    remoteFiles.forEach((file) => {
+      console.log(`Remote file: ${file.name} (${file.url})`);
+      // Here you could fetch the remote file and then upload it
+      // Or pass the URL directly to your backend to handle
+    });
   };
 
   // Calculate total number of files
@@ -116,6 +114,17 @@ export const ExampleComponent: React.FC = () => {
           )}
         </div>
       )}
+
+      <FileSidebar
+        isOpen={isDrawerOpen}
+        onClose={handleClose}
+        onSelect={handleSelect}
+        options={{
+          multiple: true,
+          accept: ".jpg,.png,.pdf",
+          allowRemote: true,
+        }}
+      />
     </div>
   );
 };
