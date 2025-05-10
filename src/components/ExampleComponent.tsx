@@ -1,24 +1,50 @@
 'use client'
 
-import { useFileDrawerStore } from "@/store/fileDrawerStore";
+import {
+  useFileDrawerStore,
+  FileSelectionResult,
+  RemoteFile,
+} from "@/store/fileDrawerStore";
 import { useState } from "react";
+import { GlobeAltIcon, DocumentIcon } from "@heroicons/react/24/outline";
 
 export const ExampleComponent: React.FC = () => {
   const { openDrawer } = useFileDrawerStore();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  
+  const [selectedRemoteFiles, setSelectedRemoteFiles] = useState<RemoteFile[]>(
+    []
+  );
+
   const handleUploadClick = () => {
     openDrawer(
-      'example-component', // requestId
-      (files) => {
-        setSelectedFiles(files);
-        console.log('Files selected:', files);
-        // Handle your upload logic here
+      "example-component", // requestId
+      (result) => {
+        const { localFiles, remoteFiles } = result;
+        setSelectedFiles(localFiles);
+        setSelectedRemoteFiles(remoteFiles);
+
+        console.log("Files selected:", { localFiles, remoteFiles });
+
+        // Example of how to process different types of files
+        localFiles.forEach((file) => {
+          console.log(`Local file: ${file.name} (${file.size} bytes)`);
+          // Here you could upload the local file to S3
+          // AWS S3 upload would use the file binary data directly
+        });
+
+        remoteFiles.forEach((file) => {
+          console.log(`Remote file: ${file.name} (${file.url})`);
+          // Here you could fetch the remote file and then upload it
+          // Or pass the URL directly to your backend to handle
+        });
       },
-      { multiple: true, accept: '.jpg,.png,.pdf' }
+      { multiple: true, accept: ".jpg,.png,.pdf", allowRemote: true }
     );
   };
-  
+
+  // Calculate total number of files
+  const totalFiles = selectedFiles.length + selectedRemoteFiles.length;
+
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-xl font-semibold mb-4 text-gray-800">
@@ -31,35 +57,63 @@ export const ExampleComponent: React.FC = () => {
         Bulk Upload Files
       </button>
 
-      {selectedFiles.length > 0 && (
+      {totalFiles > 0 && (
         <div className="mt-4">
           <h3 className="text-md font-medium mb-2 text-gray-700">
-            Selected Files ({selectedFiles.length})
+            Selected Files ({totalFiles})
           </h3>
-          <ul className="space-y-2">
-            {selectedFiles.map((file, index) => (
-              <li
-                key={index}
-                className="flex items-center p-2 bg-gray-50 rounded border border-gray-200"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2 text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <span className="text-sm truncate">{file.name}</span>
-              </li>
-            ))}
-          </ul>
+
+          {selectedFiles.length > 0 && (
+            <>
+              <h4 className="text-sm font-medium mb-1 text-gray-600">
+                Local Files
+              </h4>
+              <ul className="space-y-2 mb-3">
+                {selectedFiles.map((file, index) => (
+                  <li
+                    key={`local-${index}`}
+                    className="flex items-center p-2 bg-gray-50 rounded border border-gray-200"
+                  >
+                    <DocumentIcon className="h-5 w-5 mr-2 text-gray-500" />
+                    <div className="text-sm truncate flex-1">
+                      <span className="block font-medium truncate">
+                        {file.name}
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        {(file.size / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {selectedRemoteFiles.length > 0 && (
+            <>
+              <h4 className="text-sm font-medium mb-1 text-gray-600">
+                Remote Files
+              </h4>
+              <ul className="space-y-2">
+                {selectedRemoteFiles.map((file, index) => (
+                  <li
+                    key={`remote-${index}`}
+                    className="flex items-center p-2 bg-gray-50 rounded border border-gray-200"
+                  >
+                    <GlobeAltIcon className="h-5 w-5 mr-2 text-gray-500" />
+                    <div className="text-sm truncate flex-1">
+                      <span className="block font-medium truncate">
+                        {file.name}
+                      </span>
+                      <span className="block text-xs text-gray-500 truncate">
+                        {file.url}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       )}
     </div>
