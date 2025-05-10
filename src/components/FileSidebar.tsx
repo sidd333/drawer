@@ -1,6 +1,5 @@
 "use client";
 
-import { useFileDrawerStore, RemoteFile } from "@/store/fileDrawerStore";
 import { useState, useEffect } from "react";
 import {
   XMarkIcon,
@@ -9,8 +8,44 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 
-export const FileSidebar: React.FC = () => {
-  const { isOpen, options, closeDrawer, selectFiles } = useFileDrawerStore();
+// Define the RemoteFile type locally
+export type RemoteFile = {
+  url: string;
+  name: string;
+  type?: string;
+  size?: number;
+  lastModified?: number;
+  metadata?: {
+    contentType?: string;
+    contentDisposition?: string;
+    cacheControl?: string;
+    [key: string]: any;
+  };
+};
+
+// Define the result type to return both file types
+export type FileSelectionResult = {
+  localFiles: File[];
+  remoteFiles: RemoteFile[];
+};
+
+export interface FileSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (result: FileSelectionResult) => void;
+  options?: {
+    multiple?: boolean;
+    accept?: string;
+    allowRemote?: boolean;
+  };
+}
+
+export const FileSidebar: React.FC<FileSidebarProps> = ({
+  isOpen,
+  onClose,
+  onSelect,
+  options = { multiple: false, accept: "", allowRemote: false },
+}) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [remoteUrls, setRemoteUrls] = useState<RemoteFile[]>([]);
   const [newRemoteUrl, setNewRemoteUrl] = useState("");
@@ -134,7 +169,11 @@ export const FileSidebar: React.FC = () => {
     });
 
     if (selectedLocalFiles.length > 0 || selectedRemoteFiles.length > 0) {
-      selectFiles(selectedLocalFiles, selectedRemoteFiles);
+      onSelect({
+        localFiles: selectedLocalFiles,
+        remoteFiles: selectedRemoteFiles,
+      });
+      onClose();
     }
   };
 
@@ -145,7 +184,7 @@ export const FileSidebar: React.FC = () => {
           Bulk Upload Files
         </h3>
         <button
-          onClick={closeDrawer}
+          onClick={onClose}
           className="p-1 rounded-full hover:bg-gray-200 transition-colors"
         >
           <XMarkIcon className="h-6 w-6 text-gray-600" />
